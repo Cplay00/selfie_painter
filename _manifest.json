@@ -9,10 +9,11 @@
   },
   "license": "AGPL-3.0",
   "host_application": {
-    "min_version": "0.10.0"
+    "min_version": "0.10.0",
+    "max_version": "0.12.2"
   },
-  "homepage_url": "https://github.com/nguspring/selfie_painter",
-  "repository_url": "https://github.com/nguspring/selfie_painter",
+  "homepage_url": "https://github.com/Cplay00/selfie_painter",
+  "repository_url": "https://github.com/Cplay00/selfie_painter",
   "keywords": [
     "画图",
     "自拍",

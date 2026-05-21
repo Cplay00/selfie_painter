@@ -6,9 +6,12 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/版本-v3.6.8-blue" alt="Version">
-  <img src="https://img.shields.io/badge/MaiBot-0.10.x+-green" alt="MaiBot">
+  <img src="https://img.shields.io/badge/MaiBot-0.10.x~0.12.x-green" alt="MaiBot">
+  <img src="https://img.shields.io/badge/最后更新-旧版MaiBot-red" alt="EOL">
   <img src="https://img.shields.io/badge/License-AGPL--3.0-orange" alt="License">
 </p>
+
+> ⚠️ **重要提示：此版本为旧版 MaiBot 体系的最后一次更新。** 下次更新将迁移至新版 MaiBot，并在新分支发布。旧版分支将进入仅维护状态，不再新增功能。请及时关注新版分支的发布。
 
 ---
 
