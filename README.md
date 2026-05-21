@@ -6,8 +6,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/版本-v3.6.8-blue" alt="Version">
-  <img src="https://img.shields.io/badge/MaiBot-0.10.x~0.12.x-green" alt="MaiBot">
-  <img src="https://img.shields.io/badge/最后更新-旧版MaiBot-red" alt="EOL">
+  <img src="https://img.shields.io/badge/MaiBot-0.10.x~0.12.2-green" alt="MaiBot">
+  <img src="https://img.shields.io/badge/适配状态-旧版MaiBot (EOL)-red" alt="EOL">
   <img src="https://img.shields.io/badge/License-AGPL--3.0-orange" alt="License">
 </p>
 
