@@ -34,8 +34,8 @@
 > 本仓库是 Cplay00 维护的**再度改版**画图插件，发展脉络如下：
 >
 > 1. 最初基于原版 [custom_pic_plugin](https://github.com/1021143806/custom_pic_plugin) 修改，发布为 `selfie_painter`（v3.4.x ~ v3.5.x）
-> 2. nguspring后来将 custom_pic_plugin 升级重构为 [mais-art-journal](https://github.com/1021143806/mais-art-journal)（v3.4.0）
-> 3. 本仓库基于 mais-art-journal 重新合并重构，发布为 `selfie_painter_v2`（v3.6.7）
+> 2. 原作者后来将 custom_pic_plugin 升级重构为 [mais-art-journal](https://github.com/1021143806/mais-art-journal)（v3.4.0）
+> 3. nguspring对该仓库基于 mais-art-journal 重新合并重构，发布为 `selfie_painter_v2`（v3.6.7）
 > 4. 对于生图底层参数的种种问题，本作者已对其修复并增强参数控制。从v3.6.6开始，创立此副本进行维护。
 >
 > | 项目 | 链接 |
