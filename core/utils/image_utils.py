@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import re
 import os
@@ -109,9 +110,10 @@ class ImageProcessor:
                     image_url = cq_url.group(1).strip()
                     logger.info(f"{self.log_prefix} 从 CQ 码提取到图片 URL: {image_url[:60]}...")
                     import requests
+                    def _download():
+                        return requests.get(image_url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
                     try:
-                        resp = requests.get(image_url, timeout=15,
-                            headers={"User-Agent": "Mozilla/5.0"})
+                        resp = await asyncio.to_thread(_download)
                         if resp.status_code == 200:
                             image_base64 = base64.b64encode(resp.content).decode('utf-8')
                             logger.info(f"{self.log_prefix} CQ码图片下载成功，长度: {len(image_base64)}")
@@ -128,9 +130,10 @@ class ImageProcessor:
                     image_url = direct_url.group(1)
                     logger.info(f"{self.log_prefix} 从文本提取到直接图片 URL: {image_url[:60]}...")
                     import requests
+                    def _download():
+                        return requests.get(image_url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
                     try:
-                        resp = requests.get(image_url, timeout=15,
-                            headers={"User-Agent": "Mozilla/5.0"})
+                        resp = await asyncio.to_thread(_download)
                         if resp.status_code == 200:
                             image_base64 = base64.b64encode(resp.content).decode('utf-8')
                             logger.info(f"{self.log_prefix} 直接URL图片下载成功，长度: {len(image_base64)}")
