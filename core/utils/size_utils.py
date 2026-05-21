@@ -12,12 +12,13 @@ SIZE_SELECTOR_SYSTEM_PROMPT = """You are an image size selector. Based on the im
 
 ## Rules:
 1. Output ONLY the size, no explanations
-2. Choose based on content:
+2. If the description explicitly mentions a specific resolution (e.g. "2400x3200", "1920x1080", "分辨率 2400x3200", "图片分辨率 1920x1080", or any "WxH" pixel format), output that exact resolution as-is.
+3. Otherwise, choose based on content:
    - Portrait/character/person → vertical: 832x1216 or 1024x1536
    - Landscape/scenery/wide scene → horizontal: 1216x832 or 1536x1024
    - Avatar/icon/square content → square: 1024x1024
    - Group photo/multiple people → horizontal: 1216x832
-3. Default to 1024x1024 if unclear
+4. Default to 1024x1024 if unclear
 
 ## Examples:
 Input: 一个女孩站在海边
@@ -28,6 +29,12 @@ Output: 1216x832
 
 Input: 可爱的猫咪头像
 Output: 1024x1024
+
+Input: 请生成一张2400x3200的图片
+Output: 2400x3200
+
+Input: 图片分辨率1920x1080的海报
+Output: 1920x1080
 
 Input: draw a cat
 Output: 1024x1024

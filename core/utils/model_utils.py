@@ -38,10 +38,11 @@ def get_model_config(
     # 回退：逐字段组装
     fields = [
         "name", "base_url", "api_key", "format", "model",
-        "fixed_size_enabled", "default_size", "seed",
-        "guidance_scale", "num_inference_steps", "watermark",
+        "fixed_size_enabled", "default_size", "seed", "seed_enabled",
+        "guidance_scale", "guidance_scale_enabled",
+        "num_inference_steps", "num_inference_steps_enabled", "watermark",
         "custom_prompt_add", "negative_prompt_add", "artist",
-        "support_img2img", "auto_recall_delay",
+        "support_img2img", "img2img_format", "auto_recall_delay",
         # 以下字段代码中有默认值，不在 config_schema 中暴露，
         # 但保留在 fields 列表中以支持用户手动配置时的回退组装
         "cfg", "sampler", "nocache", "noise_schedule",

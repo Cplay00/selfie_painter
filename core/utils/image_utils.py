@@ -1,12 +1,7 @@
 import base64
 import re
 import os
-import re
-import urllib.parse
-import urllib.request
-from typing import Optional, Tuple, List, Dict
-
-import requests
+from typing import Optional, Tuple, List
 
 from src.common.logger import get_logger
 from maim_message import Seg
@@ -35,29 +30,36 @@ class ImageProcessor:
         查找顺序：
         1. 从当前消息的 message_segment 中直接提取（Command 组件的主要路径）
         2. 从 processed_plain_text 提取 picid → 查 Images 数据库 → 读文件（Action 组件的主要路径）
+        3. 兜底：从 processed_plain_text 提取 CQ 码 / URL / 平台图片标记
         """
         try:
-            # 方法1：从当前消息的 message_segment 中检索
+            text = self._get_processed_plain_text()
+
+            # ── 方法1：从 message_segment 提取 ──
             message_segments = None
             if hasattr(self.action, 'message') and hasattr(self.action.message, 'message_segment'):
-                # Command组件
                 message_segments = self.action.message.message_segment
             elif hasattr(self.action, 'action_message') and hasattr(self.action.action_message, 'message_segment'):
-                # Action组件
                 message_segments = self.action.action_message.message_segment
 
             if message_segments:
+                # 诊断：记录 segment 类型帮助排查
+                seg_types = []
+                for seg in (message_segments if not isinstance(message_segments, Seg) else [message_segments]):
+                    seg_types.append(f"{seg.type}")
+                logger.debug(f"{self.log_prefix} message_segment 类型: {seg_types}")
+
                 emoji_base64_list = self.find_and_return_emoji_in_message(message_segments)
                 if emoji_base64_list:
                     logger.info(f"{self.log_prefix} 从 message_segment 中找到图片")
                     return emoji_base64_list[0]
 
-            # 方法2：从 processed_plain_text 提取 picid，查 Images 数据库读文件
+            # ── 方法2：从 processed_plain_text 提取 picid ──
             from src.common.database.database_model import Images
 
-            text = self._get_processed_plain_text()
             picid = None
             if text:
+                logger.debug(f"{self.log_prefix} processed_plain_text 前200字符: {text[:200]}")
                 match = re.search(r'picid:([a-zA-Z0-9-]+)', text)
                 if match:
                     picid = match.group(1)
@@ -66,20 +68,75 @@ class ImageProcessor:
             if picid:
                 logger.info(f"{self.log_prefix} 尝试通过 picid 获取图片路径: {picid}")
                 image = Images.get_or_none(Images.image_id == picid)
-
                 if image and hasattr(image, 'path') and image.path:
-                    image_path = image.path
-                    try:
-                        if os.path.exists(image_path):
-                            with open(image_path, 'rb') as f:
+                    raw_path = image.path
+
+                    # 尝试多个路径解析
+                    candidate_paths = [raw_path]
+                    if not os.path.isabs(raw_path):
+                        # 相对项目根
+                        candidate_paths.append(os.path.join(os.getcwd(), raw_path))
+                        # 相对插件目录
+                        plugin_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                        candidate_paths.append(os.path.join(plugin_dir, raw_path))
+                        # 相对父级（项目根通常在上层）
+                        candidate_paths.append(os.path.join(os.path.dirname(plugin_dir), raw_path))
+
+                    found_path = None
+                    for candidate in candidate_paths:
+                        candidate = os.path.normpath(candidate)
+                        if os.path.exists(candidate):
+                            found_path = candidate
+                            break
+
+                    if found_path:
+                        try:
+                            with open(found_path, 'rb') as f:
                                 image_data = f.read()
                             image_base64 = base64.b64encode(image_data).decode('utf-8')
-                            logger.info(f"{self.log_prefix} 通过 picid 加载图片成功, 路径: {image_path}")
+                            logger.info(f"{self.log_prefix} 通过 picid 加载图片成功, 路径: {found_path}")
                             return image_base64
-                        else:
-                            logger.warning(f"{self.log_prefix} 图片文件不存在: {image_path}")
+                        except Exception as e:
+                            logger.error(f"{self.log_prefix} 读取图片文件失败: {e!r}")
+                    else:
+                        logger.warning(f"{self.log_prefix} 图片文件不存在，尝试过的路径: {candidate_paths}")
+
+            # ── 方法3：兜底 — 从 processed_plain_text 提取 CQ 码图片URL ──
+            if text:
+                # 匹配 [CQ:image,file=xxx,url=http://...]
+                cq_url = re.search(r'\[CQ:image,[^\]]*?url=([^\],]+)', text)
+                if cq_url:
+                    image_url = cq_url.group(1).strip()
+                    logger.info(f"{self.log_prefix} 从 CQ 码提取到图片 URL: {image_url[:60]}...")
+                    import requests
+                    try:
+                        resp = requests.get(image_url, timeout=15,
+                            headers={"User-Agent": "Mozilla/5.0"})
+                        if resp.status_code == 200:
+                            image_base64 = base64.b64encode(resp.content).decode('utf-8')
+                            logger.info(f"{self.log_prefix} CQ码图片下载成功，长度: {len(image_base64)}")
+                            return image_base64
                     except Exception as e:
-                        logger.error(f"{self.log_prefix} 读取图片文件失败: {e!r}")
+                        logger.warning(f"{self.log_prefix} CQ码图片下载失败: {e!r}")
+
+                # 匹配直接图片 URL
+                direct_url = re.search(
+                    r'(https?://[^\s<>"\'，。]+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^\s<>"\'，]*)?)',
+                    text, re.IGNORECASE
+                )
+                if direct_url:
+                    image_url = direct_url.group(1)
+                    logger.info(f"{self.log_prefix} 从文本提取到直接图片 URL: {image_url[:60]}...")
+                    import requests
+                    try:
+                        resp = requests.get(image_url, timeout=15,
+                            headers={"User-Agent": "Mozilla/5.0"})
+                        if resp.status_code == 200:
+                            image_base64 = base64.b64encode(resp.content).decode('utf-8')
+                            logger.info(f"{self.log_prefix} 直接URL图片下载成功，长度: {len(image_base64)}")
+                            return image_base64
+                    except Exception as e:
+                        logger.warning(f"{self.log_prefix} 直接URL图片下载失败: {e!r}")
 
             logger.warning(f"{self.log_prefix} 未找到可用的图片")
             return None
